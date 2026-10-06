@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Elementor Page Text Replacer – Replace text on one Elementor page only</title>
+<meta name="description" content="A small WordPress plugin that replaces text inside one specific Elementor page by page ID. Perfect for cloned location pages. Includes dry run mode.">
+<meta property="og:title" content="Elementor Page Text Replacer">
+<meta property="og:description" content="Replace city names (or any text) on a single Elementor page by page ID, safely, with dry run.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#1877F2;
+    --blue-dark:#166FE5;
+    --blue-deep:#0A5BC4;
+    --blue-tint:#E7F3FF;
+    --green:#42B72A;
+    --green-dark:#36A420;
+    --bg:#F0F2F5;
+    --card:#FFFFFF;
+    --text:#050505;
+    --text-2:#65676B;
+    --border:#DADDE1;
+    --divider:#E4E6EB;
+    --code-bg:#1C1E21;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(0,0,0,.1), 0 2px 12px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:"Inter",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-optical-sizing:auto;
+    line-height:1.6;-webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  img{max-width:100%;display:block}
+  button,input,summary,.btn,table{font-family:inherit}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  code,pre{font-family:SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace}
+  :not(pre)>code{background:var(--blue-tint);color:var(--blue-deep);padding:2px 6px;border-radius:5px;font-size:.9em}
+
+  /* Nav */
+  .nav{position:sticky;top:0;z-index:50;background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+  .nav .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--text);font-size:1.05rem}
+  .brand:hover{text-decoration:none}
+  .logo{width:36px;height:36px;border-radius:50%;background:var(--blue);display:grid;place-items:center;color:#fff;font-weight:800;font-size:1.1rem}
+  .nav-links{display:flex;gap:6px;align-items:center}
+  .nav-links a{color:var(--text-2);font-weight:600;font-size:.93rem;padding:8px 12px;border-radius:8px}
+  .nav-links a:hover{background:var(--bg);text-decoration:none}
+  @media(max-width:760px){.nav-links a.hide-m{display:none}}
+
+  /* Buttons */
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:8px;font-weight:700;font-size:.98rem;border:0;cursor:pointer;transition:.15s}
+  .btn:hover{text-decoration:none}
+  .btn-primary{background:var(--blue);color:#fff}
+  .btn-primary:hover{background:var(--blue-dark)}
+  .btn-green{background:var(--green);color:#fff}
+  .btn-green:hover{background:var(--green-dark)}
+  .btn-ghost{background:var(--blue-tint);color:var(--blue)}
+  .btn-ghost:hover{background:#d8eaff}
+  .btn-sm{padding:8px 14px;font-size:.88rem}
+
+  /* Hero */
+  .hero{background:linear-gradient(160deg,var(--blue) 0%,var(--blue-deep) 100%);color:#fff;padding:72px 0 0;overflow:hidden}
+  .hero-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:48px;align-items:center}
+  .badge{display:inline-block;background:rgba(255,255,255,.18);padding:5px 14px;border-radius:999px;font-size:.82rem;font-weight:700;letter-spacing:.02em;margin-bottom:18px}
+  .hero h1{font-size:clamp(2rem,4.6vw,3.2rem);line-height:1.12;margin:0 0 16px;letter-spacing:-.02em}
+  .hero p.lead{font-size:1.15rem;opacity:.95;margin:0 0 26px;max-width:520px}
+  .hero .actions{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:34px}
+  .hero .btn-white{background:#fff;color:var(--blue)}
+  .hero .btn-white:hover{background:var(--blue-tint)}
+  .hero .btn-outline{background:transparent;color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.65)}
+  .hero .btn-outline:hover{background:rgba(255,255,255,.12)}
+  .stats{display:flex;gap:28px;flex-wrap:wrap;padding-bottom:56px}
+  .stats div b{display:block;font-size:1.35rem}
+  .stats div span{font-size:.85rem;opacity:.85}
+  .hero-shot{align-self:end;margin-bottom:-1px}
+  @media(max-width:860px){.hero-grid{grid-template-columns:1fr}.hero{padding-top:48px}.hero-shot{display:block}}
+
+  /* Screenshot frames */
+  .shot{background:var(--card);border-radius:var(--radius) var(--radius) 0 0;box-shadow:0 10px 40px rgba(0,0,0,.25);overflow:hidden;position:relative}
+  .shot.round{border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--divider)}
+  .shot .bar{display:flex;gap:6px;padding:10px 14px;background:#E4E6EB}
+  .shot .bar i{width:10px;height:10px;border-radius:50%;background:#BCC0C4}
+  figure{margin:0}
+  .shot img{display:block;width:100%;height:auto;background:#fff}
+  .step>*{min-width:0}
+
+  /* Sections */
+  section{padding:76px 0}
+  section.alt{background:var(--card)}
+  .eyebrow{color:var(--blue);font-weight:800;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+  h2{font-size:clamp(1.6rem,3vw,2.2rem);line-height:1.2;margin:0 0 12px;letter-spacing:-.01em}
+  .sub{color:var(--text-2);font-size:1.07rem;max-width:660px;margin:0 0 40px}
+  .center{text-align:center}
+  .center .sub{margin-left:auto;margin-right:auto}
+
+  .grid{display:grid;gap:20px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:860px){.g3{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.g3,.g2{grid-template-columns:1fr}}
+  .card{background:var(--card);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);border:1px solid var(--divider)}
+  section.alt .card{background:var(--bg);box-shadow:none}
+  .card h3{margin:14px 0 6px;font-size:1.1rem}
+  .card p{margin:0;color:var(--text-2);font-size:.96rem}
+  .icon{width:46px;height:46px;border-radius:50%;background:var(--blue-tint);display:grid;place-items:center;font-size:1.3rem}
+  .icon.green{background:#E6F6E2}
+
+  /* Before / after */
+  .ba{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;max-width:760px;margin:0 auto}
+  .ba .box{background:var(--card);border:1px solid var(--divider);border-radius:var(--radius);padding:22px;text-align:center;box-shadow:var(--shadow)}
+  .ba .box small{display:block;color:var(--text-2);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:.72rem;margin-bottom:6px}
+  .ba .box strong{font-size:1.15rem}
+  .ba .box.new{border-color:var(--blue);background:var(--blue-tint)}
+  .ba .arrow{color:var(--blue);font-size:1.8rem;font-weight:800}
+  @media(max-width:600px){.ba{grid-template-columns:1fr}.ba .arrow{transform:rotate(90deg);text-align:center}}
+
+  /* Steps */
+  .steps{counter-reset:s;display:grid;gap:36px}
+  .step{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center}
+  .step:nth-child(even) .step-text{order:2}
+  .step-text .n{width:38px;height:38px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:800;margin-bottom:12px}
+  .step-text h3{margin:0 0 8px;font-size:1.35rem}
+  .step-text p{margin:0 0 10px;color:var(--text-2)}
+  .step-text ol,.step-text ul{margin:0 0 10px;padding-left:20px;color:var(--text-2)}
+  @media(max-width:760px){.step{grid-template-columns:1fr}.step:nth-child(even) .step-text{order:0}}
+
+  /* Code */
+  .code{position:relative;background:var(--code-bg);color:#E4E6EB;border-radius:8px;padding:14px 16px;font-size:.88rem;margin:10px 0;overflow-x:auto}
+  .code pre{margin:0;white-space:pre}
+  .copy{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:6px;font-size:.75rem;padding:4px 10px;cursor:pointer;font-weight:600}
+  .copy:hover{background:rgba(255,255,255,.22)}
+  .kw{color:#79B8FF}
+
+  /* Form mock */
+  .form-mock{background:var(--card);border-radius:var(--radius);padding:22px;border:1px solid var(--divider);box-shadow:var(--shadow);max-width:460px;margin:0 auto}
+  .form-mock label{display:block;font-weight:700;font-size:.85rem;margin:12px 0 4px}
+  .form-mock .in{border:1px solid var(--border);border-radius:6px;padding:9px 12px;background:#F5F6F7;font-size:.95rem}
+  .form-mock .chk{display:flex;gap:8px;align-items:center;margin:14px 0;font-weight:600}
+  .form-mock .chk span{width:18px;height:18px;border-radius:4px;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:.75rem}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--divider)}
+  th,td{padding:13px 16px;text-align:left;border-bottom:1px solid var(--divider);font-size:.95rem}
+  th{background:var(--blue);color:#fff;font-weight:700}
+  tr:last-child td{border-bottom:0}
+  tbody tr:nth-child(even){background:#FAFBFC}
+  .tw{overflow-x:auto}
+
+  /* Lists */
+  .list{list-style:none;padding:0;margin:14px 0 0}
+  .list li{padding:7px 0 7px 30px;position:relative;color:var(--text);font-size:.96rem}
+  .list li::before{position:absolute;left:0;top:7px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:.72rem;font-weight:800;color:#fff}
+  .list.yes li::before{content:"✓";background:var(--green)}
+  .list.no li::before{content:"✕";background:#8A8D91}
+
+  /* Gallery */
+  .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+  @media(max-width:700px){.gallery{grid-template-columns:1fr}}
+  .gallery figure{margin:0}
+  .gallery figcaption{margin-top:10px;font-weight:700;font-size:.95rem}
+  .gallery figcaption span{display:block;color:var(--text-2);font-weight:400;font-size:.88rem}
+
+  /* Callouts */
+  .callout{display:flex;gap:14px;background:var(--blue-tint);border-left:4px solid var(--blue);border-radius:8px;padding:18px 20px}
+  .callout.warn{background:#FFF4E5;border-left-color:#F7B928}
+  .callout b{display:block;margin-bottom:2px}
+  .callout p{margin:0;color:#333;font-size:.96rem}
+
+  /* FAQ */
+  details{background:var(--card);border:1px solid var(--divider);border-radius:var(--radius);margin-bottom:12px;box-shadow:var(--shadow)}
+  details summary{cursor:pointer;padding:16px 20px;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:12px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::after{content:"+";color:var(--blue);font-size:1.4rem;line-height:1}
+  details[open] summary::after{content:"–"}
+  details .ans{padding:0 20px 18px;color:var(--text-2)}
+  details .ans ul{margin:8px 0 0;padding-left:20px}
+
+  /* Checklist */
+  .check{display:grid;gap:10px;max-width:520px;margin:0 auto}
+  .check label{display:flex;gap:12px;align-items:center;background:var(--card);padding:13px 16px;border-radius:8px;border:1px solid var(--divider);cursor:pointer;font-weight:600;transition:.15s}
+  .check label:hover{border-color:var(--blue)}
+  .check input{width:20px;height:20px;accent-color:var(--green)}
+  .check input:checked+span{color:var(--text-2);text-decoration:line-through}
+
+  /* CTA */
+  .cta{background:linear-gradient(160deg,var(--blue),var(--blue-deep));color:#fff;text-align:center;border-radius:16px;padding:56px 24px}
+  .cta h2{color:#fff}
+  .cta p{opacity:.92;margin:0 auto 24px;max-width:520px}
+  .cta .actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+  footer{padding:36px 0;color:var(--text-2);font-size:.9rem;text-align:center}
+  footer a{font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="logo">E</span> Elementor Page Text Replacer</a>
+    <nav class="nav-links">
+      <a class="hide-m" href="#features">Features</a>
+      <a class="hide-m" href="#install">Install</a>
+      <a class="hide-m" href="#usage">Usage</a>
+      <a class="hide-m" href="#faq">Troubleshooting</a>
+      <!-- TODO: replace YOUR_USERNAME with your GitHub username -->
+      <a class="btn btn-primary btn-sm" href="https://github.com/YOUR_USERNAME/elementor-page-text-replacer" style="color:#fff">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="badge">FREE WORDPRESS PLUGIN</span>
+      <h1>Replace text on <u style="text-decoration-color:var(--green);text-decoration-thickness:4px;text-underline-offset:6px">one</u> Elementor page. Nothing else.</h1>
+      <p class="lead">Cloned a page for a new location? Swap <strong>Dhaka</strong> for <strong>Sylhet</strong> by page ID, without touching your header, footer, menus or any other page.</p>
+      <div class="actions">
+        <a class="btn btn-white" href="https://github.com/YOUR_USERNAME/elementor-page-text-replacer/releases/latest">⬇ Download Plugin</a>
+        <a class="btn btn-outline" href="#usage">See how it works</a>
+      </div>
+      <div class="stats">
+        <div><b>1 page</b><span>per run, by ID</span></div>
+        <div><b>Dry run</b><span>preview first</span></div>
+        <div><b>0 settings</b><span>just one form</span></div>
+      </div>
+    </div>
+    <div class="hero-shot">
+      <figure class="shot">
+        <div class="bar"><i></i><i></i><i></i></div>
+        <img src="images/plugin-form.png" width="878" height="399" alt="Elementor Page Text Replacer admin form" loading="eager">
+      </figure>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEM / SOLUTION -->
+<section class="alt">
+  <div class="wrap center">
+    <div class="eyebrow">The problem</div>
+    <h2>Cloned pages keep the old city name</h2>
+    <p class="sub">Site-wide search and replace tools are risky. This plugin edits only the Elementor data of the page ID you choose.</p>
+    <div class="ba">
+      <div class="box"><small>Cloned page says</small><strong>SEO Service in Dhaka</strong></div>
+      <div class="arrow">→</div>
+      <div class="box new"><small>After replacement</small><strong>SEO Service in Sylhet</strong></div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="wrap">
+    <div class="eyebrow">Features</div>
+    <h2>Small plugin, focused job</h2>
+    <p class="sub">Built for people who create many location pages from a single Elementor design.</p>
+    <div class="grid g3">
+      <div class="card"><div class="icon">🎯</div><h3>Targets one page</h3><p>Only the selected page's <code>_elementor_data</code> is changed. Other pages and templates stay untouched.</p></div>
+      <div class="card"><div class="icon green">👁</div><h3>Dry run mode</h3><p>See exactly how many replacements will be made before anything is written to the database.</p></div>
+      <div class="card"><div class="icon">🧩</div><h3>Works across widgets</h3><p>Headings, text editors, buttons, tabs, accordions and image alt text stored in Elementor.</p></div>
+      <div class="card"><div class="icon green">⚡</div><h3>Fast workflow</h3><p>Clone, set the new slug, enter the page ID and run. Repeat for 30 locations in minutes.</p></div>
+      <div class="card"><div class="icon">🔒</div><h3>Admin only</h3><p>Lives under <strong>Tools → Elementor Text Replacer</strong> in the WordPress dashboard.</p></div>
+      <div class="card"><div class="icon green">🪶</div><h3>Lightweight</h3><p>A single PHP file. No bloat, no settings pages, no front-end code.</p></div>
+    </div>
+
+    <div class="grid g2" style="margin-top:36px">
+      <div class="card">
+        <h3 style="margin-top:0">✅ What it changes</h3>
+        <ul class="list yes">
+          <li>Headings and text editor widgets</li>
+          <li>Button text (and links, if they contain the text)</li>
+          <li>Image alt text stored in Elementor</li>
+          <li>Tabs, accordions and other widget fields</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">🚫 What it won't normally touch</h3>
+        <ul class="list no">
+          <li>Global header and footer templates</li>
+          <li>Navigation menus</li>
+          <li>Other pages and blog posts</li>
+          <li>WordPress and theme settings</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section class="alt" id="install">
+  <div class="wrap">
+    <div class="eyebrow">Installation</div>
+    <h2>Installed in under two minutes</h2>
+    <p class="sub">Upload the plugin folder using your file manager or SFTP.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-text">
+          <div class="n">1</div>
+          <h3>Add the plugin folder</h3>
+          <p>Open <code>/wp-content/plugins/</code> and create this structure:</p>
+          <div class="code"><button class="copy">Copy</button><pre>/wp-content/plugins/
+└── elementor-page-text-replacer/
+    └── elementor-page-text-replacer.php</pre></div>
+          <p>Paste the plugin code into the PHP file.</p>
+        </div>
+        <figure class="shot round">
+          <img src="images/plugin-folder.png" width="797" height="166" alt="Plugin folder structure in file manager" loading="lazy">
+        </figure>
+      </div>
+
+      <div class="step">
+        <div class="step-text">
+          <div class="n">2</div>
+          <h3>Activate it</h3>
+          <p>Go to <strong>Plugins → Installed Plugins</strong> and activate <strong>Elementor Page Text Replacer</strong>. Then open <strong>Tools → Elementor Text Replacer</strong>.</p>
+        </div>
+        <div class="form-mock" aria-hidden="true">
+          <strong>Tools → Elementor Text Replacer</strong>
+          <label>Page ID</label><div class="in">123</div>
+          <label>Find Text</label><div class="in">Dhaka</div>
+          <label>Replace With</label><div class="in">Sylhet</div>
+          <div class="chk"><span>✓</span> Dry Run</div>
+          <span class="btn btn-primary btn-sm">Run Replacement</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- USAGE -->
+<section id="usage">
+  <div class="wrap">
+    <div class="eyebrow">Usage</div>
+    <h2>Find the ID, dry run, then replace</h2>
+    <p class="sub">Always preview first. Then run the real replacement once the count looks right.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-text">
+          <div class="n">1</div>
+          <h3>Find the page ID</h3>
+          <ol>
+            <li>Go to <strong>Pages → All Pages</strong>.</li>
+            <li>Click <strong>Edit</strong> (not "Edit with Elementor").</li>
+            <li>Look at the URL in your browser.</li>
+          </ol>
+          <div class="code"><button class="copy">Copy</button><pre>wp-admin/post.php?post=<span class="kw">7</span>&action=elementor</pre></div>
+          <p>Here the page ID is <code>7</code>.</p>
+        </div>
+        <figure class="shot round">
+          <img src="images/page-id.png" width="1184" height="694" alt="Finding the page ID in the WordPress edit URL" loading="lazy">
+        </figure>
+      </div>
+
+      <div class="step">
+        <div class="step-text">
+          <div class="n">2</div>
+          <h3>Run a dry run</h3>
+          <p>Enter the page ID, the text to find and the replacement. Keep <strong>Dry Run</strong> checked and click <strong>Run Replacement</strong>. Nothing is changed. You just see the count.</p>
+          <table style="margin-top:12px"><thead><tr><th>Field</th><th>Example</th></tr></thead><tbody>
+            <tr><td>Page ID</td><td><code>123</code></td></tr>
+            <tr><td>Find Text</td><td><code>Dhaka</code></td></tr>
+            <tr><td>Replace With</td><td><code>Sylhet</code></td></tr>
+            <tr><td>Dry Run</td><td>Checked</td></tr>
+          </tbody></table>
+        </div>
+        <figure class="shot round">
+          <img src="images/dry-run-result.png" width="968" height="452" alt="Dry run result showing number of replacements" loading="lazy">
+        </figure>
+      </div>
+
+      <div class="step">
+        <div class="step-text">
+          <div class="n">3</div>
+          <h3>Run the real replacement</h3>
+          <p>If the count looks right, uncheck <strong>Dry Run</strong> and click <strong>Run Replacement</strong> again. You will see:</p>
+          <div class="code"><button class="copy">Copy</button><pre>Done. Replaced 6 item(s) on page ID 7.</pre></div>
+        </div>
+        <figure class="shot round">
+          <img src="images/success-result.png" width="670" height="456" alt="Success message after replacement" loading="lazy">
+        </figure>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:48px">
+      <div style="font-size:1.4rem">🧹</div>
+      <div><b>After replacing</b>
+        <p>Go to <strong>Elementor → Tools → Regenerate CSS &amp; Data</strong>, clear your cache plugin and hosting cache, then check the page in an incognito window.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WORKFLOW -->
+<section class="alt">
+  <div class="wrap">
+    <div class="eyebrow">Workflow</div>
+    <h2>Perfect for 30 location pages</h2>
+    <p class="sub">Clone once, then repeat these steps for every city.</p>
+    <div class="grid g2" style="align-items:start">
+      <div>
+        <ol class="list" style="counter-reset:w">
+          <li style="padding-left:0">1. Clone the original Elementor page</li>
+          <li style="padding-left:0">2. Change the page title</li>
+          <li style="padding-left:0">3. Change the page slug</li>
+          <li style="padding-left:0">4. Find the new page ID</li>
+          <li style="padding-left:0">5. Run a dry run with the old city and new city</li>
+          <li style="padding-left:0">6. Run the real replacement</li>
+          <li style="padding-left:0">7. Regenerate Elementor CSS and clear cache</li>
+          <li style="padding-left:0">8. Check the frontend page</li>
+        </ol>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Page</th><th>ID</th><th>Find</th><th>Replace</th></tr></thead>
+          <tbody>
+            <tr><td>SEO Service in Sylhet</td><td><code>123</code></td><td>Dhaka</td><td>Sylhet</td></tr>
+            <tr><td>SEO Service in Chittagong</td><td><code>124</code></td><td>Dhaka</td><td>Chittagong</td></tr>
+            <tr><td>SEO Service in Khulna</td><td><code>125</code></td><td>Dhaka</td><td>Khulna</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SAFETY -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Safety</div>
+    <h2>Before you run it on a live site</h2>
+    <p class="sub">Replacement is permanent once Dry Run is unchecked. Work through this checklist.</p>
+    <div class="check">
+      <label><input type="checkbox"><span>Website backup created</span></label>
+      <label><input type="checkbox"><span>Correct page ID confirmed</span></label>
+      <label><input type="checkbox"><span>Dry run completed</span></label>
+      <label><input type="checkbox"><span>Replacement count reviewed</span></label>
+      <label><input type="checkbox"><span>Real replacement completed</span></label>
+      <label><input type="checkbox"><span>Elementor CSS regenerated</span></label>
+      <label><input type="checkbox"><span>Cache cleared</span></label>
+      <label><input type="checkbox"><span>Frontend page checked</span></label>
+    </div>
+    <div class="callout warn" style="max-width:520px;margin:28px auto 0">
+      <div style="font-size:1.4rem">⚠️</div>
+      <div><b>Tip</b><p>Test on a staging site first when possible. Matching text is replaced everywhere in that page's Elementor data, including links and alt text.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="alt">
+  <div class="wrap">
+    <div class="eyebrow">Screenshots</div>
+    <h2>A closer look</h2>
+    <p class="sub">Real screenshots from a WordPress install.</p>
+    <div class="gallery">
+      <figure><div class="shot round">
+        <img src="images/plugin-form.png" width="878" height="399" alt="Plugin form" loading="lazy"></div>
+        <figcaption>Plugin form<span>Tools → Elementor Text Replacer</span></figcaption></figure>
+      <figure><div class="shot round">
+        <img src="images/dry-run-result.png" width="968" height="452" alt="Dry run result" loading="lazy"></div>
+        <figcaption>Dry run result<span>Preview the replacement count</span></figcaption></figure>
+      <figure><div class="shot round">
+        <img src="images/success-result.png" width="670" height="456" alt="Success result" loading="lazy"></div>
+        <figcaption>Success message<span>Confirms items replaced</span></figcaption></figure>
+      <figure><div class="shot round">
+        <img src="images/page-id.png" width="1184" height="694" alt="Page ID in URL" loading="lazy"></div>
+        <figcaption>Finding the page ID<span>Read it from the edit URL</span></figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="wrap" style="max-width:820px">
+    <div class="center">
+      <div class="eyebrow">Troubleshooting</div>
+      <h2>Common questions</h2>
+      <p class="sub">Quick fixes for the most common issues.</p>
+    </div>
+    <details>
+      <summary>The plugin says Elementor data is missing</summary>
+      <div class="ans"><ul><li>Make sure the page was built with Elementor.</li><li>Confirm you entered the correct page ID.</li><li>Check the ID by clicking <strong>Edit</strong>, not <strong>Edit with Elementor</strong>.</li></ul></div>
+    </details>
+    <details>
+      <summary>Replacement worked but the frontend shows old text</summary>
+      <div class="ans"><ul><li>Elementor → Tools → Regenerate CSS &amp; Data.</li><li>Clear your cache plugin and hosting cache.</li><li>Open the page in an incognito window.</li></ul></div>
+    </details>
+    <details>
+      <summary>The dry run shows too many replacements</summary>
+      <div class="ans">The old text may also appear in hidden sections, tabs, buttons, links or image alt text on that page.</div>
+    </details>
+    <details>
+      <summary>Header or footer still shows the old city</summary>
+      <div class="ans">Headers and footers are usually separate Elementor templates with their own IDs. Edit that template separately, or run the plugin with the template's own post ID.</div>
+    </details>
+    <details>
+      <summary>Will it change other pages on my site?</summary>
+      <div class="ans">No. It only updates <code>_elementor_data</code> for the single post ID you enter.</div>
+    </details>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="cta">
+      <h2>Ready to clone smarter?</h2>
+      <p>Grab the plugin from GitHub and update your location pages one by one, safely.</p>
+      <div class="actions">
+        <a class="btn btn-green" href="https://github.com/YOUR_USERNAME/elementor-page-text-replacer/releases/latest">⬇ Download from GitHub</a>
+        <a class="btn btn-white" style="background:#fff;color:var(--blue)" href="https://github.com/YOUR_USERNAME/elementor-page-text-replacer">★ Star the repo</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Elementor Page Text Replacer · Made for WordPress &amp; Elementor ·
+    <a href="https://github.com/YOUR_USERNAME/elementor-page-text-replacer">GitHub</a>
+    <br><small>Not affiliated with Elementor Ltd. or WordPress.</small>
+  </div>
+</footer>
+
+<script>
+  // Copy buttons
+  document.querySelectorAll('.copy').forEach(function(b){
+    b.addEventListener('click', function(){
+      var t = b.parentElement.querySelector('pre').innerText;
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function(){
+        b.textContent='Copied!'; setTimeout(function(){b.textContent='Copy'},1500);
+      }).catch(function(){});
+    });
+  });
+</script>
+</body>
+</html>
